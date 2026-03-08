@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/common/prisma/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model food_type {
+  type_id    Int       @id @default(autoincrement()) @db.UnsignedInt
+  type_name  String    @db.VarChar(255)
+  created_at DateTime? @default(now()) @db.DateTime(0)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+  foods      foods[]
+}
+
+model foods {
+  food_id    Int        @id @default(autoincrement()) @db.UnsignedInt
+  food_name  String     @db.VarChar(150)
+  image      String?    @db.VarChar(255)
+  price      Decimal    @db.Decimal(10, 2)
+  desc       String     @default("Chưa có thông tin") @db.VarChar(255)
+  type_id    Int        @db.UnsignedInt
+  created_at DateTime?  @default(now()) @db.DateTime(0)
+  food_type  food_type  @relation(fields: [type_id], references: [type_id], onDelete: Cascade, onUpdate: NoAction, map: "foods_ibfk_1")
+  orders     orders[]
+  sub_food   sub_food[]
+
+  @@index([type_id], map: "idx_type")
+}
+
+model like_res {
+  user_id     Int         @db.UnsignedInt
+  res_id      Int         @db.UnsignedInt
+  date_like   DateTime    @default(now()) @db.DateTime(0)
+  is_like     Boolean     @default(true)
+  created_at  DateTime?   @default(now()) @db.DateTime(0)
+  updated_at  DateTime?   @default(now()) @db.DateTime(0)
+  users       users       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "like_res_ibfk_1")
+  restaurants restaurants @relation(fields: [res_id], references: [res_id], onDelete: Cascade, onUpdate: NoAction, map: "like_res_ibfk_2")
+
+  @@id([user_id, res_id])
+  @@index([res_id], map: "idx_res")
+}
+
+model orders {
+  user_id    Int    @db.UnsignedInt
+  food_id    Int    @db.UnsignedInt
+  amount     Int    @db.UnsignedInt
+  code       String @db.VarChar(255)
+  arr_sub_id String @db.VarChar(255)
+  users      users  @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "orders_ibfk_1")
+  foods      foods  @relation(fields: [food_id], references: [food_id], onDelete: Cascade, onUpdate: NoAction, map: "orders_ibfk_2")
+
+  @@id([user_id, food_id])
+  @@index([code], map: "idx_code")
+  @@index([food_id], map: "idx_food")
+  @@index([user_id], map: "idx_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model rate_res {
+  user_id     Int         @db.UnsignedInt
+  res_id      Int         @db.UnsignedInt
+  amount      Int         @db.UnsignedTinyInt
+  date_rate   DateTime    @default(now()) @db.DateTime(0)
+  created_at  DateTime?   @default(now()) @db.DateTime(0)
+  updated_at  DateTime?   @default(now()) @db.DateTime(0)
+  users       users       @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "rate_res_ibfk_1")
+  restaurants restaurants @relation(fields: [res_id], references: [res_id], onDelete: Cascade, onUpdate: NoAction, map: "rate_res_ibfk_2")
+
+  @@id([user_id, res_id])
+  @@index([res_id], map: "idx_res")
+}
+
+model restaurants {
+  res_id     Int        @id @default(autoincrement()) @db.UnsignedInt
+  res_name   String     @db.VarChar(150)
+  image      String?    @db.VarChar(255)
+  desc       String     @default("Chưa có thông tin") @db.VarChar(255)
+  created_at DateTime?  @default(now()) @db.DateTime(0)
+  updated_at DateTime?  @default(now()) @db.DateTime(0)
+  like_res   like_res[]
+  rate_res   rate_res[]
+
+  @@index([res_name], map: "idx_name")
+}
+
+model sub_food {
+  sub_id     Int       @id @default(autoincrement()) @db.UnsignedInt
+  sub_name   String    @db.VarChar(255)
+  sub_price  Decimal   @db.Decimal(10, 2)
+  food_id    Int       @db.UnsignedInt
+  created_at DateTime? @default(now()) @db.DateTime(0)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+  foods      foods     @relation(fields: [food_id], references: [food_id], onDelete: Cascade, onUpdate: NoAction, map: "sub_food_ibfk_1")
+
+  @@index([food_id], map: "food_id")
+  @@index([sub_id], map: "idx_sub_food")
+}
+
+model users {
+  user_id    Int        @id @default(autoincrement()) @db.UnsignedInt
+  full_name  String     @db.VarChar(100)
+  email      String     @unique(map: "email") @db.VarChar(255)
+  password   String     @db.VarChar(255)
+  created_at DateTime?  @default(now()) @db.DateTime(0)
+  updated_at DateTime?  @default(now()) @db.DateTime(0)
+  like_res   like_res[]
+  orders     orders[]
+  rate_res   rate_res[]
+
+  @@index([email], map: "idx_email")
+}
